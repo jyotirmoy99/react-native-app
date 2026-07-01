@@ -73,7 +73,6 @@ export default function HomeScreen() {
             {/* Recommended Header */}
             <Text className="text-gray-900 text-lg font-bold px-5 mb-4">
               Recommended
-              {/* 1:47:30 */}
             </Text>
           </View>
         }
