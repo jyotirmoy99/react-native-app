@@ -15,7 +15,12 @@ export default function FilterChip({ text, onRemove, icon }: FilterChipProps) {
       <Text className="text-blue-700 text-xs font-semibold capitalize">
         {text}
       </Text>
-      <TouchableOpacity onPress={onRemove}>
+      <TouchableOpacity
+        onPress={onRemove}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${text} filter`}
+      >
         <Ionicons name="close" size={12} color="#1D4ED8" />
       </TouchableOpacity>
     </View>

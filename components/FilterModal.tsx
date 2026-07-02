@@ -1,6 +1,6 @@
 import { PropertyType, useFilterStore } from "@/store/filterStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -76,6 +76,14 @@ export default function FilterModal({
   const [localMax, setLocalMax] = useState<string>(
     maxPrice ? String(maxPrice) : "",
   );
+
+  // Sync local price fields with store values when modal opens or store values change
+  useEffect(() => {
+    if (visible) {
+      setLocalMin(minPrice ? String(minPrice) : "");
+      setLocalMax(maxPrice ? String(maxPrice) : "");
+    }
+  }, [visible, minPrice, maxPrice]);
 
   const activeCount = [type, bedrooms, bathrooms, minPrice, maxPrice].filter(
     (v) => v !== null,
