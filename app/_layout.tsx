@@ -14,13 +14,6 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <Slot />
-      {/* <View className="bg-violet-500 w-full h-40"></View>
-      <View className="bg-indigo-500 w-full h-40"></View>
-      <View className="bg-blue-500 w-full h-40"></View>
-      <View className="bg-green-500 w-full h-40"></View>
-      <View className="bg-yellow-500 w-full h-40"></View>
-      <View className="bg-orange-500 w-full h-40"></View>
-      <View className="bg-red-500 w-full h-40"></View> */}
     </ClerkProvider>
   );
 }
