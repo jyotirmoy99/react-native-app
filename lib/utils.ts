@@ -21,3 +21,21 @@ export const escapePostgRESTSearch = (value: string): string => {
   // Escape backslashes first, then %, _ which are SQL LIKE wildcards
   return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 };
+
+/**
+ * Escapes a search term for safe interpolation inside a PostgREST .or() clause.
+ * The value is wrapped in quotes and escaped so reserved characters such as commas
+ * and parentheses cannot alter the filter syntax.
+ */
+export const escapePostgRESTOrSearch = (value: string): string => {
+  if (!value) return value;
+
+  const escapedValue = escapePostgRESTSearch(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/,/g, "\\,")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+
+  return `"%${escapedValue}%"`;
+};
