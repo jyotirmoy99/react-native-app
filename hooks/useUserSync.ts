@@ -6,7 +6,6 @@ import { useSupabase } from "./useSupabase";
 export const useUserSync = () => {
   const { user } = useUser();
   const setIsAdmin = userUserStore((state) => state.setIsAdmin);
-
   const authSupabase = useSupabase();
 
   useEffect(() => {
