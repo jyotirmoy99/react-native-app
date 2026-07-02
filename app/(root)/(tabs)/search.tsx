@@ -2,7 +2,7 @@ import FilterChip from "@/components/FilterChip";
 import FilterModal from "@/components/FilterModal";
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/lib/supabase";
-import { formatPrice } from "@/lib/utils";
+import { escapePostgRESTSearch, formatPrice } from "@/lib/utils";
 import { useFilterStore } from "@/store/filterStore";
 import { Property } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,7 +55,10 @@ export default function SearchScreen() {
       let query = supabase.from("properties").select("*");
 
       if (search) {
-        query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%`);
+        const escapedSearch = escapePostgRESTSearch(search);
+        query = query.or(
+          `title.ilike.%${escapedSearch}%,city.ilike.%${escapedSearch}%`,
+        );
       }
 
       if (type) {
