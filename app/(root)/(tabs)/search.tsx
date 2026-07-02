@@ -205,9 +205,9 @@ export default function SearchScreen() {
             {(minPrice !== null || maxPrice !== null) && (
               <FilterChip
                 text={
-                  minPrice && maxPrice
+                  minPrice !== null && maxPrice !== null
                     ? `${formatPrice(minPrice)} – ${formatPrice(maxPrice)}`
-                    : minPrice
+                    : minPrice !== null
                       ? `From ${formatPrice(minPrice)}`
                       : `Up to ${formatPrice(maxPrice!)}`
                 }
