@@ -5,7 +5,7 @@ interface UserStore {
   setIsAdmin: (value: boolean) => void;
 }
 
-export const userUserStore = create<UserStore>((set) => ({
+export const useUserStore = create<UserStore>((set) => ({
   isAdmin: false,
   setIsAdmin: (value) => set({ isAdmin: value }),
 }));
