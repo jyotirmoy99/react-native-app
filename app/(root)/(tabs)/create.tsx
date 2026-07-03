@@ -44,6 +44,7 @@ interface FormState {
   isFeatured: boolean;
   images: string[];
   localImages: string[];
+  imageKeys: string[];
 }
 
 const INITIAL_FORM: FormState = {
@@ -61,6 +62,7 @@ const INITIAL_FORM: FormState = {
   isFeatured: false,
   images: [],
   localImages: [],
+  imageKeys: [],
 };
 
 export default function Create() {
@@ -74,8 +76,13 @@ export default function Create() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  const updateForm = (fields: Partial<FormState>) =>
-    setForm((prev) => ({ ...prev, ...fields }));
+  const updateForm = (
+    fields: Partial<FormState> | ((prev: FormState) => Partial<FormState>),
+  ) =>
+    setForm((prev) => ({
+      ...prev,
+      ...(typeof fields === "function" ? fields(prev) : fields),
+    }));
 
   // ---------- Image Picker ---------- //
   const handlePickImages = async () => {
@@ -88,12 +95,15 @@ export default function Create() {
       return;
     }
 
+    const remainingSlots = 6 - form.localImages.length;
+    if (remainingSlots <= 0) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
       allowsMultipleSelection: true,
       quality: 0.7,
       base64: true,
-      selectionLimit: 6,
+      selectionLimit: remainingSlots,
     });
 
     if (result.canceled) return;
@@ -102,6 +112,7 @@ export default function Create() {
 
     const uploadedUrls: string[] = [];
     const previewUris: string[] = [];
+    const uploadedKeys: string[] = [];
 
     for (const asset of result.assets) {
       try {
@@ -127,25 +138,47 @@ export default function Create() {
 
         uploadedUrls.push(urlData.publicUrl);
         previewUris.push(asset.uri);
+        uploadedKeys.push(filename);
       } catch (err) {
         console.error("Upload error:", err);
         Alert.alert("Upload Failed", "One or more images failed to upload.");
       }
     }
 
-    updateForm({
-      images: [...form.images, ...uploadedUrls],
-      localImages: [...form.localImages, ...previewUris],
-    });
+    updateForm((prev) => ({
+      ...prev,
+      images: [...prev.images, ...uploadedUrls],
+      localImages: [...prev.localImages, ...previewUris],
+      imageKeys: [...prev.imageKeys, ...uploadedKeys],
+    }));
     setUploadingImages(false);
   };
 
   // ---------- Remove Images ---------- //
-  const handleRemoveImage = (index: number) => {
-    updateForm({
-      images: form.images.filter((_, i) => i !== index),
-      localImages: form.localImages.filter((_, i) => i !== index),
-    });
+  const handleRemoveImage = async (index: number) => {
+    const keyToRemove = form.imageKeys[index];
+
+    if (keyToRemove) {
+      const { error } = await authSupabase.storage
+        .from("property-images")
+        .remove([keyToRemove]);
+
+      if (error) {
+        console.error("Error deleting image from storage:", error);
+        Alert.alert(
+          "Delete Failed",
+          "Could not remove the image from storage.",
+        );
+        return;
+      }
+    }
+
+    updateForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+      localImages: prev.localImages.filter((_, i) => i !== index),
+      imageKeys: prev.imageKeys.filter((_, i) => i !== index),
+    }));
   };
 
   // ---------- Location Detection ---------- //
@@ -200,37 +233,59 @@ export default function Create() {
     if (form.images.length === 0)
       return Alert.alert("Validation", "Please upload at least one image.");
 
-    setSubmitting(true);
+    const latitudeNum = Number(form.latitude);
+    const longitudeNum = Number(form.longitude);
+    const hasLatitude = form.latitude.trim().length > 0;
+    const hasLongitude = form.longitude.trim().length > 0;
+    const latitudeValid =
+      !hasLatitude ||
+      (Number.isFinite(latitudeNum) && latitudeNum >= -90 && latitudeNum <= 90);
+    const longitudeValid =
+      !hasLongitude ||
+      (Number.isFinite(longitudeNum) &&
+        longitudeNum >= -180 &&
+        longitudeNum <= 180);
 
-    const { error } = await authSupabase.from("properties").insert({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      price: priceNum,
-      type: form.type,
-      bedrooms: form.bedrooms,
-      bathrooms: form.bathrooms,
-      area_sqft: form.areaSqft ? Number(form.areaSqft) : null,
-      address: form.address.trim(),
-      city: form.city.trim(),
-      latitude: form.latitude ? Number(form.latitude) : null,
-      longitude: form.longitude ? Number(form.longitude) : null,
-      images: form.images,
-      is_featured: form.isFeatured,
-      is_sold: false,
-    });
-
-    setSubmitting(false);
-
-    if (error) {
-      Alert.alert("Error", "Failed to create property. Please try again.");
-      console.error(error);
-      return;
+    if (!latitudeValid || !longitudeValid) {
+      return Alert.alert(
+        "Validation",
+        "Please enter valid latitude and longitude values.",
+      );
     }
 
-    setForm(INITIAL_FORM);
-    Alert.alert("Success! 🎉", "Property listed successfully.", [
-      { text: "OK", onPress: () => router.replace("/(root)/(tabs)") },
-    ]);
+    setSubmitting(true);
+
+    try {
+      const { error } = await authSupabase.from("properties").insert({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        price: priceNum,
+        type: form.type,
+        bedrooms: form.bedrooms,
+        bathrooms: form.bathrooms,
+        area_sqft: form.areaSqft ? Number(form.areaSqft) : null,
+        address: form.address.trim(),
+        city: form.city.trim(),
+        latitude: hasLatitude ? latitudeNum : null,
+        longitude: hasLongitude ? longitudeNum : null,
+        images: form.images,
+        is_featured: form.isFeatured,
+        is_sold: false,
+      });
+
+      if (error) {
+        Alert.alert("Error", "Failed to create property. Please try again.");
+        console.error(error);
+        return;
+      }
+
+      setForm(INITIAL_FORM);
+      Alert.alert("Success! 🎉", "Property listed successfully.", [
+        { text: "OK", onPress: () => router.replace("/(root)/(tabs)") },
+      ]);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const Counter = ({

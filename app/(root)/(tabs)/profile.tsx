@@ -54,11 +54,27 @@ export default function ProfileScreen() {
 
       setIsUpdating(true);
 
-      const base64Image = result.assets[0].base64;
-      const uri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const base64Image = asset?.base64;
+      const uri = asset?.uri;
+
+      if (!base64Image || !uri) {
+        Alert.alert(
+          "Upload Failed",
+          "Could not read the selected image. Please try again.",
+        );
+        return;
+      }
+
       const filename = uri.split("/").pop() || "profile.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const mimeType = match ? `image/${match[1]}` : "image/jpeg";
+      const match = /\.(\w+)$/i.exec(filename);
+      const extension = match?.[1]?.toLowerCase();
+      const mimeType =
+        extension === "jpg" || extension === "jpeg"
+          ? "image/jpeg"
+          : extension
+            ? `image/${extension}`
+            : "image/jpeg";
       const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
       await user?.setProfileImage({ file: dataUrl });
@@ -95,6 +111,9 @@ export default function ProfileScreen() {
           <TouchableOpacity
             onPress={handleUpdateProfileImage}
             disabled={isUpdating}
+            accessibilityRole="button"
+            accessibilityLabel="Update profile photo"
+            accessibilityHint="Opens the photo library so you can choose a new profile picture"
             className="absolute bottom-3 right-0 bg-blue-600 rounded-full p-2"
           >
             {isUpdating ? (
@@ -108,7 +127,7 @@ export default function ProfileScreen() {
           {user.firstName} {user.lastName}
         </Text>
         <Text className="text-gray-500 mt-1">
-          {user.emailAddresses[0].emailAddress}
+          {user.emailAddresses?.[0]?.emailAddress ?? "No email available"}
         </Text>
       </View>
 
@@ -134,11 +153,19 @@ export default function ProfileScreen() {
         <MenuItem
           icon="help-circle-outline"
           label="Help & Support"
-          onPress={() =>
-            Linking.openURL(
-              "mailto:bjyotirmoy636@gmail.com?subject=Help%20%26%20Support%20-%20Dweliq%20App",
-            )
-          }
+          onPress={async () => {
+            try {
+              await Linking.openURL(
+                "mailto:bjyotirmoy636@gmail.com?subject=Help%20%26%20Support%20-%20Dweliq%20App",
+              );
+            } catch (error) {
+              console.error("Failed to launch mail client:", error);
+              Alert.alert(
+                "Unable to open mail app",
+                "No mail application is available on this device. Please contact support manually.",
+              );
+            }
+          }}
         />
       </View>
 

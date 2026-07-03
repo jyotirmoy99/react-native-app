@@ -61,7 +61,7 @@ export default function SavedScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [authSupabase, userId]);
 
   // Refresh every time the tab comes into focus
   useFocusEffect(
