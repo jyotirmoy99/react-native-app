@@ -81,7 +81,16 @@ export default function PropertyDetails() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          await authSupabase.from("properties").delete().eq("id", id);
+          const { error } = await authSupabase
+            .from("properties")
+            .delete()
+            .eq("id", id);
+
+          if (error) {
+            Alert.alert("Delete failed", error.message || "Unable to delete");
+            return;
+          }
+
           router.replace("/(root)/(tabs)");
         },
       },
@@ -94,11 +103,24 @@ export default function PropertyDetails() {
       {
         text: "Mark Sold",
         onPress: async () => {
-          await authSupabase
+          const { data, error } = await authSupabase
             .from("properties")
             .update({ is_sold: true })
-            .eq("id", id);
-          setProperty((prev) => (prev ? { ...prev, is_sold: true } : prev));
+            .eq("id", id)
+            .select("is_sold")
+            .maybeSingle();
+
+          if (error) {
+            Alert.alert(
+              "Update failed",
+              error.message || "Unable to mark sold",
+            );
+            return;
+          }
+
+          setProperty((prev) =>
+            prev ? { ...prev, is_sold: data?.is_sold ?? true } : prev,
+          );
         },
       },
     ]);

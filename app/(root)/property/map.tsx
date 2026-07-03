@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Linking, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
@@ -15,12 +15,13 @@ export default function MapScreen() {
 
   const lat = parseFloat(latitude);
   const lng = parseFloat(longitude);
+  const isValidCoords = Number.isFinite(lat) && Number.isFinite(lng);
 
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${
-    lng - 0.001
-  }%2C${lat - 0.001}%2C${lng + 0.001}%2C${
-    lat + 0.001
-  }&layer=mapnik&marker=${lat}%2C${lng}`;
+  const mapUrl = isValidCoords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.001}%2C${
+        lat - 0.001
+      }%2C${lng + 0.001}%2C${lat + 0.001}&layer=mapnik&marker=${lat}%2C${lng}`
+    : undefined;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -46,9 +47,15 @@ export default function MapScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() =>
-            Linking.openURL(`https://www.google.com/maps?q=${lat},${lng}`)
-          }
+          onPress={() => {
+            if (!isValidCoords) return;
+            Linking.openURL(
+              `https://www.google.com/maps?q=${lat},${lng}`,
+            ).catch((err) => {
+              console.error("Failed to open URL", err);
+              Alert.alert("Unable to open maps", err?.message || "");
+            });
+          }}
           className="flex-row items-center gap-1 bg-blue-50 px-3 py-2 rounded-full"
         >
           <Ionicons name="navigate-outline" size={14} color="#2563EB" />
@@ -59,7 +66,13 @@ export default function MapScreen() {
       </View>
 
       {/* Full Screen Map */}
-      <WebView source={{ uri: mapUrl }} style={{ flex: 1 }} />
+      {isValidCoords && mapUrl ? (
+        <WebView source={{ uri: mapUrl }} style={{ flex: 1 }} />
+      ) : (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-gray-500">Location unavailable</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
