@@ -1,6 +1,7 @@
 import FeaturedCard from "@/components/FeaturedCard";
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/lib/supabase";
+import { getGreeting } from "@/lib/utils";
 import { Property } from "@/types";
 import { useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
@@ -83,7 +84,7 @@ export default function HomeScreen() {
               />
 
               <View className="items-end">
-                <Text>Good Morning 👋</Text>
+                <Text>{getGreeting()} 👋</Text>
                 <Text className="text-gray-900 text-base font-bold">
                   {user?.firstName ?? "User"}
                 </Text>

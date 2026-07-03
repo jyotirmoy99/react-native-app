@@ -9,7 +9,7 @@ export interface Property {
   area_sqft: number;
   address: string;
   city: string;
-  latitude: string;
+  latitude: number;
   longitude: number;
   images: string[];
   is_featured: boolean;

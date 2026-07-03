@@ -35,28 +35,53 @@ export function useSavedProperty(propertyId: string, onUnsave?: () => void) {
   }, [userId, propertyId]);
 
   const toggleSaveProperty = async () => {
-    if (!userId || saveLoading) return;
+    if (!userId || !propertyId || saveLoading) return;
+
     setSaveLoading(true);
 
-    if (isSaved) {
-      // Unsave property
-      await authSupabase
-        .from("saved_properties")
-        .delete()
-        .eq("user_clerk_id", userId)
-        .eq("property_id", propertyId);
-      setIsSaved(false);
-      onUnsave?.();
-    } else {
-      // Save property
-      await authSupabase.from("saved_properties").insert({
-        user_clerk_id: userId,
-        property_id: propertyId,
-      });
-      setIsSaved(true);
-    }
+    try {
+      if (isSaved) {
+        // Unsave property
+        const { data, error } = await authSupabase
+          .from("saved_properties")
+          .delete()
+          .eq("user_clerk_id", userId)
+          .eq("property_id", propertyId)
+          .select("id")
+          .maybeSingle();
 
-    setSaveLoading(false);
+        if (error) {
+          console.error("Error unsaving property:", error);
+          return;
+        }
+
+        if (data) {
+          setIsSaved(false);
+          onUnsave?.();
+        }
+      } else {
+        // Save property
+        const { data, error } = await authSupabase
+          .from("saved_properties")
+          .insert({
+            user_clerk_id: userId,
+            property_id: propertyId,
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error saving property:", error);
+          return;
+        }
+
+        if (data) {
+          setIsSaved(true);
+        }
+      }
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   return { isSaved, toggleSaveProperty, saveLoading };
