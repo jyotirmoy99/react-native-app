@@ -1,11 +1,11 @@
-import { userUserStore } from "@/store/userStore";
+import { useUserStore } from "@/store/userStore";
 import { useUser } from "@clerk/expo";
 import { useEffect } from "react";
 import { useSupabase } from "./useSupabase";
 
 export const useUserSync = () => {
   const { user } = useUser();
-  const setIsAdmin = userUserStore((state) => state.setIsAdmin);
+  const setIsAdmin = useUserStore((state) => state.setIsAdmin);
   const authSupabase = useSupabase();
 
   useEffect(() => {
