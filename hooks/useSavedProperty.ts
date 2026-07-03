@@ -1,5 +1,6 @@
 import { useAuth } from "@clerk/expo";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { useSupabase } from "./useSupabase";
 
 export function useSavedProperty(propertyId: string, onUnsave?: () => void) {
@@ -9,7 +10,7 @@ export function useSavedProperty(propertyId: string, onUnsave?: () => void) {
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
-  const checkIfSaved = async () => {
+  const checkIfSaved = useCallback(async () => {
     if (!userId || !propertyId) {
       setIsSaved(false);
       return;
@@ -28,11 +29,17 @@ export function useSavedProperty(propertyId: string, onUnsave?: () => void) {
     }
 
     setIsSaved(!!data);
-  };
+  }, [userId, propertyId, authSupabase]);
 
   useEffect(() => {
     checkIfSaved();
-  }, [userId, propertyId]);
+  }, [checkIfSaved]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkIfSaved();
+    }, [checkIfSaved]),
+  );
 
   const toggleSaveProperty = async () => {
     if (!userId || !propertyId || saveLoading) return;
